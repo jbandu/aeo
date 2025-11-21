@@ -13,6 +13,7 @@ from models import (
     UploadResponse, EnrichmentResponse, AEOScoreBreakdown
 )
 from services.enrichment import EnrichmentService, calculate_aeo_score
+from services.knowledge_graph import KnowledgeGraphService
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -377,6 +378,137 @@ async def get_score_breakdown(product_id: int, conn: sqlite3.Connection = Depend
         consistency=breakdown['consistency'],
         details=breakdown['details']
     )
+
+# ============================================================================
+# KNOWLEDGE GRAPH ENDPOINTS
+# ============================================================================
+
+@app.post("/api/products/{product_id}/analyze-relationships")
+async def analyze_product_relationships(
+    product_id: int,
+    conn: sqlite3.Connection = Depends(get_db)
+):
+    """
+    Analyze and create relationships between the specified product and other products.
+    Uses Claude AI to identify similar, complementary, and alternative products.
+    """
+    try:
+        kg_service = KnowledgeGraphService()
+        relationships = await kg_service.analyze_product_relationships(product_id, conn)
+
+        return {
+            "success": True,
+            "product_id": product_id,
+            "relationships_found": len(relationships),
+            "relationships": relationships
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Relationship analysis failed: {str(e)}")
+
+@app.get("/api/products/{product_id}/relationships")
+async def get_product_relationships(
+    product_id: int,
+    conn: sqlite3.Connection = Depends(get_db)
+):
+    """Get all relationships for a specific product."""
+    try:
+        kg_service = KnowledgeGraphService()
+        relationships = kg_service.get_product_relationships(product_id, conn)
+
+        return {
+            "product_id": product_id,
+            "relationships": relationships
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get relationships: {str(e)}")
+
+@app.get("/api/products/{product_id}/recommendations")
+async def get_product_recommendations(
+    product_id: int,
+    conn: sqlite3.Connection = Depends(get_db)
+):
+    """
+    Get product recommendations based on knowledge graph relationships.
+    Returns similar products, complementary products, and alternatives.
+    """
+    try:
+        kg_service = KnowledgeGraphService()
+        recommendations = kg_service.get_recommendations(product_id, conn)
+
+        return {
+            "product_id": product_id,
+            "recommendations": recommendations
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get recommendations: {str(e)}")
+
+@app.get("/api/products/{product_id}/graph")
+async def get_product_graph(
+    product_id: int,
+    conn: sqlite3.Connection = Depends(get_db)
+):
+    """
+    Get graph visualization data centered on a specific product.
+    Returns nodes and edges within 2 hops of the product.
+    """
+    try:
+        kg_service = KnowledgeGraphService()
+        graph_data = kg_service.get_graph_visualization_data(product_id, conn)
+
+        return {
+            "product_id": product_id,
+            "graph": graph_data
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get graph data: {str(e)}")
+
+@app.get("/api/knowledge-graph")
+async def get_full_knowledge_graph(conn: sqlite3.Connection = Depends(get_db)):
+    """Get the complete knowledge graph for all products."""
+    try:
+        kg_service = KnowledgeGraphService()
+        graph_data = kg_service.get_graph_visualization_data(None, conn)
+
+        return {
+            "graph": graph_data,
+            "stats": {
+                "total_nodes": len(graph_data['nodes']),
+                "total_edges": len(graph_data['links'])
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get knowledge graph: {str(e)}")
+
+@app.post("/api/products/batch-analyze")
+async def batch_analyze_relationships(conn: sqlite3.Connection = Depends(get_db)):
+    """
+    Analyze relationships for all products in the catalog.
+    This is a long-running operation that processes all products.
+    """
+    try:
+        kg_service = KnowledgeGraphService()
+
+        # Track progress
+        progress_data = {"current": 0, "total": 0, "status": "running"}
+
+        def progress_callback(data):
+            progress_data.update(data)
+
+        result = await kg_service.batch_analyze_all_products(conn, progress_callback)
+
+        return {
+            "success": True,
+            "message": "Batch analysis completed",
+            "statistics": result
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Batch analysis failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

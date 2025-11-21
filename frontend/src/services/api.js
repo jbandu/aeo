@@ -42,4 +42,35 @@ export const getScoreBreakdown = async (productId) => {
   return response.data;
 };
 
+// Knowledge Graph API calls
+export const analyzeProductRelationships = async (productId) => {
+  const response = await api.post(`/api/products/${productId}/analyze-relationships`);
+  return response.data;
+};
+
+export const getProductRelationships = async (productId) => {
+  const response = await api.get(`/api/products/${productId}/relationships`);
+  return response.data;
+};
+
+export const getProductRecommendations = async (productId) => {
+  const response = await api.get(`/api/products/${productId}/recommendations`);
+  return response.data;
+};
+
+export const getProductGraph = async (productId) => {
+  const response = await api.get(`/api/products/${productId}/graph`);
+  return response.data;
+};
+
+export const getFullKnowledgeGraph = async () => {
+  const response = await api.get('/api/knowledge-graph');
+  return response.data;
+};
+
+export const batchAnalyzeRelationships = async () => {
+  const response = await api.post('/api/products/batch-analyze');
+  return response.data;
+};
+
 export default api;

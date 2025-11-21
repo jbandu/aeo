@@ -48,3 +48,21 @@ CREATE TABLE IF NOT EXISTS enrichment_logs (
 
 CREATE INDEX idx_enrichment_logs_product_id ON enrichment_logs(product_id);
 CREATE INDEX idx_enrichment_logs_timestamp ON enrichment_logs(timestamp);
+
+-- Product relationships table: stores knowledge graph edges
+CREATE TABLE IF NOT EXISTS product_relationships (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_product_id INTEGER NOT NULL,
+    target_product_id INTEGER NOT NULL,
+    relationship_type TEXT NOT NULL, -- SIMILAR_TO, COMPLEMENTS, ALTERNATIVE_TO
+    similarity_score REAL, -- 0.0 to 1.0
+    reasoning TEXT, -- AI-generated explanation
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (source_product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (target_product_id) REFERENCES products(id) ON DELETE CASCADE,
+    UNIQUE(source_product_id, target_product_id, relationship_type)
+);
+
+CREATE INDEX idx_relationships_source ON product_relationships(source_product_id);
+CREATE INDEX idx_relationships_target ON product_relationships(target_product_id);
+CREATE INDEX idx_relationships_type ON product_relationships(relationship_type);

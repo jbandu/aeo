@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getProduct, enrichProduct, getScoreBreakdown } from '../services/api';
+import {
+  getProduct,
+  enrichProduct,
+  getScoreBreakdown,
+  analyzeProductRelationships,
+  getProductRecommendations,
+  getProductGraph
+} from '../services/api';
+import GraphVisualization from '../components/GraphVisualization';
 
 function ProductDetailPage() {
   const { id } = useParams();
@@ -10,6 +18,10 @@ function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [enriching, setEnriching] = useState(false);
   const [error, setError] = useState(null);
+  const [recommendations, setRecommendations] = useState(null);
+  const [graphData, setGraphData] = useState(null);
+  const [analyzingRelationships, setAnalyzingRelationships] = useState(false);
+  const [showGraph, setShowGraph] = useState(false);
 
   useEffect(() => {
     loadProduct();
@@ -30,10 +42,34 @@ function ProductDetailPage() {
           console.error('Failed to load score breakdown:', err);
         }
       }
+
+      // Load recommendations and graph data
+      try {
+        const recs = await getProductRecommendations(id);
+        setRecommendations(recs.recommendations);
+
+        const graph = await getProductGraph(id);
+        setGraphData(graph.graph);
+      } catch (err) {
+        console.error('Failed to load relationships:', err);
+      }
     } catch (err) {
       setError('Failed to load product');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAnalyzeRelationships = async () => {
+    try {
+      setAnalyzingRelationships(true);
+      await analyzeProductRelationships(id);
+      await loadProduct(); // Reload to get new relationships
+      alert('Relationships analyzed successfully!');
+    } catch (err) {
+      alert('Failed to analyze relationships: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setAnalyzingRelationships(false);
     }
   };
 
@@ -113,6 +149,13 @@ function ProductDetailPage() {
                 AEO Score: {enrichment.aeo_score}
               </span>
             )}
+            <button
+              onClick={handleAnalyzeRelationships}
+              disabled={analyzingRelationships}
+              className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {analyzingRelationships ? 'Analyzing...' : 'Analyze Relationships'}
+            </button>
             <button
               onClick={handleEnrich}
               disabled={enriching}
@@ -300,6 +343,136 @@ function ProductDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Product Recommendations */}
+      {recommendations && (
+        <div className="mt-6">
+          <h2 className="text-2xl font-bold mb-4">Product Recommendations</h2>
+
+          {/* Similar Products */}
+          {recommendations.similar && recommendations.similar.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3 flex items-center">
+                <span className="w-3 h-0.5 bg-blue-500 mr-2"></span>
+                Similar Products
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recommendations.similar.map((rel) => (
+                  <RecommendationCard key={rel.product_id} recommendation={rel} navigate={navigate} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Complementary Products */}
+          {recommendations.complements && recommendations.complements.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3 flex items-center">
+                <span className="w-3 h-0.5 bg-green-500 mr-2"></span>
+                Complementary Products
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recommendations.complements.map((rel) => (
+                  <RecommendationCard key={rel.product_id} recommendation={rel} navigate={navigate} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Alternative Products */}
+          {recommendations.alternatives && recommendations.alternatives.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3 flex items-center">
+                <span className="w-3 h-0.5 bg-amber-500 mr-2"></span>
+                Alternative Products
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recommendations.alternatives.map((rel) => (
+                  <RecommendationCard key={rel.product_id} recommendation={rel} navigate={navigate} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!recommendations.similar?.length && !recommendations.complements?.length && !recommendations.alternatives?.length && (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <p className="text-gray-500 mb-3">No relationships found yet</p>
+              <button
+                onClick={handleAnalyzeRelationships}
+                disabled={analyzingRelationships}
+                className="btn btn-primary disabled:opacity-50"
+              >
+                {analyzingRelationships ? 'Analyzing...' : 'Analyze Relationships'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Knowledge Graph Visualization */}
+      {graphData && graphData.nodes.length > 0 && (
+        <div className="mt-6 card">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Product Knowledge Graph</h2>
+            <button
+              onClick={() => setShowGraph(!showGraph)}
+              className="btn btn-secondary"
+            >
+              {showGraph ? 'Hide Graph' : 'Show Graph'}
+            </button>
+          </div>
+
+          {showGraph && (
+            <div className="mt-4">
+              <p className="text-sm text-gray-600 mb-4">
+                This graph shows relationships within 2 hops of the current product.
+                Click on nodes to navigate to other products.
+              </p>
+              <GraphVisualization
+                graphData={graphData}
+                onNodeClick={(productId) => navigate(`/products/${productId}`)}
+                height={500}
+              />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RecommendationCard({ recommendation, navigate }) {
+  const getRelationshipColor = (type) => {
+    switch (type) {
+      case 'SIMILAR_TO':
+        return 'bg-blue-100 text-blue-800';
+      case 'COMPLEMENTS':
+        return 'bg-green-100 text-green-800';
+      case 'ALTERNATIVE_TO':
+        return 'bg-amber-100 text-amber-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div className="card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate(`/products/${recommendation.product_id}`)}>
+      <div className="flex justify-between items-start mb-2">
+        <h4 className="font-semibold text-gray-900 line-clamp-2">{recommendation.title}</h4>
+        <span className={`text-xs px-2 py-1 rounded ${getRelationshipColor(recommendation.relationship_type)}`}>
+          {(recommendation.similarity_score * 100).toFixed(0)}%
+        </span>
+      </div>
+
+      <div className="space-y-1 text-sm text-gray-600 mb-3">
+        {recommendation.category && <p>Category: {recommendation.category}</p>}
+        {recommendation.brand && <p>Brand: {recommendation.brand}</p>}
+        {recommendation.price && <p className="font-semibold text-gray-900">Price: ${recommendation.price}</p>}
+      </div>
+
+      {recommendation.reasoning && (
+        <p className="text-xs text-gray-500 italic">{recommendation.reasoning}</p>
+      )}
     </div>
   );
 }

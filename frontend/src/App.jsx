@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import UploadPage from './pages/UploadPage';
 import ProductListPage from './pages/ProductListPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import KnowledgeGraphPage from './pages/KnowledgeGraphPage';
 
 function App() {
   return (
@@ -18,6 +19,9 @@ function App() {
                 <Link to="/" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                   Products
                 </Link>
+                <Link to="/knowledge-graph" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                  Knowledge Graph
+                </Link>
                 <Link to="/upload" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                   Upload
                 </Link>
@@ -29,6 +33,7 @@ function App() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Routes>
             <Route path="/" element={<ProductListPage />} />
+            <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/products/:id" element={<ProductDetailPage />} />
           </Routes>
