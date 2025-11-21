@@ -1,0 +1,11 @@
+sku,title,description,category,brand,price,attributes
+ELEC-001,Wireless Earbuds,Bluetooth earbuds with noise cancellation,Electronics,TechSound,79.99,"{""color"": ""black"", ""battery_life"": ""24 hours"", ""wireless"": true}"
+FASH-002,Cotton T-Shirt,Basic crew neck t-shirt,Fashion,StyleWear,19.99,"{""size"": ""M"", ""color"": ""blue"", ""material"": ""100% cotton""}"
+HOME-003,Stainless Steel Blender,High-power kitchen blender,Home & Kitchen,BlendPro,129.99,"{""power"": ""1000W"", ""capacity"": ""2L"", ""speeds"": 10}"
+ELEC-004,4K Smart TV 55 inch,Ultra HD television with streaming apps,Electronics,VisionTech,599.99,"{""screen_size"": ""55 inches"", ""resolution"": ""4K"", ""smart_features"": true}"
+FASH-005,Running Shoes,Lightweight athletic shoes for running,Fashion,SportFit,89.99,"{""size"": ""10"", ""color"": ""black/white"", ""type"": ""running""}"
+HOME-006,Robot Vacuum Cleaner,Automatic vacuum with mapping technology,Home & Kitchen,CleanBot,299.99,"{""battery"": ""2 hours"", ""smart_mapping"": true, ""wifi_enabled"": true}"
+ELEC-007,Laptop Stand,Adjustable aluminum laptop stand,Electronics,DeskPro,39.99,"{""material"": ""aluminum"", ""adjustable"": true, ""color"": ""silver""}"
+FASH-008,Leather Wallet,Genuine leather bifold wallet,Fashion,LeatherLux,49.99,"{""material"": ""genuine leather"", ""color"": ""brown"", ""card_slots"": 8}"
+HOME-009,Air Fryer,Digital air fryer for healthy cooking,Home & Kitchen,CookEasy,119.99,"{""capacity"": ""5.8 quarts"", ""power"": ""1700W"", ""digital_display"": true}"
+ELEC-010,USB-C Hub,7-in-1 USB-C multiport adapter,Electronics,ConnectPlus,45.99,"{""ports"": 7, ""hdmi"": true, ""usb_ports"": 3, ""sd_card"": true}"
